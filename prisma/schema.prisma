@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Seller{
+  id Int @id @default(autoincrement())
+  storeName String @unique
+  gstNumber String @unique
+  email String @unique
+  address String
+  contactNumber String
+  password String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[] //Array of related Product records 
+}
+
+model Product {
+  id Int @id @default(autoincrement())
+  name String 
+  description String
+  price Int 
+  category String
+  stock Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt 
+
+  sellerId Int //Foreign key to seller , the Seller's Id
+  // specifies that userId refers to the id field in the Seller model
+  seller Seller @relation(fields: [sellerId],references: [id]) //Relation field to Seller
+}
