@@ -5,7 +5,7 @@ import {prisma} from '../utils/prisma';
 import bcrypt from 'bcryptjs';
 import jwt ,{ SignOptions } from 'jsonwebtoken';
 
-import {sellerSignupSchema,sellerSigninSchema} from '../types/types';
+import {sellerSignupSchema,sellerSigninSchema,sellerProfileSchema,sellerProfileUpdateSchema} from '../types/types';
 
 // configuring environment variables
 dotenv.config();
@@ -116,9 +116,9 @@ export const sellerSigninHandler = async (req:Request,res:Response):Promise<void
             return;
         }
 
-        const token = await signToken({sellerId : seller.id,email:seller.email,gstNumber:seller.gstNumber},process.env.jwt_secret,{expiresIn:"1w"});
+        const token = await signToken({sellerId : seller.id,email:seller.email,gstNumber:seller.gstNumber},process.env.jwt_secret as string,{expiresIn:"1w"});
 
-        // console.log("token",token)
+    
 
         res.cookie('token',token, {
             httpOnly : true , //prevents javascript access to cookies , helps avoid XSS(cross-site scripting)
@@ -137,3 +137,102 @@ export const sellerSigninHandler = async (req:Request,res:Response):Promise<void
         return;
     }
 }
+
+
+export const sellerProfileHandler  = async (req:Request,res:Response):Promise<void> => {
+    try{
+       const parsedPayload = sellerProfileSchema.safeParse(req.body);
+
+       if(!parsedPayload.success){
+        res.status(400).json({errors:parsedPayload.error});
+        return;
+       }
+
+       const {gstNumber} = parsedPayload.data;
+
+        const seller = await prisma.seller.findUnique({
+            where : {
+                gstNumber : gstNumber
+            },
+            select : {
+                storeName : true,
+                gstNumber : true,
+                email : true,
+                address : true,
+                contactNumber : true,
+                products : true
+            }
+        })
+
+        res.status(200).json({msg:"seller account retrieved successfully",seller})
+        return;
+    }catch(err){
+        res.status(500).json({msg:"internal server error..."});
+        return;
+    }
+}
+
+
+export const sellerProfileUpdate = async (req:Request,res:Response):Promise<void> => {
+    try{
+        
+        const parsedPayload = sellerProfileUpdateSchema.safeParse(req.body);
+
+        if(!parsedPayload.data){
+            res.status(400).json({err:parsedPayload.error});
+            return;
+        }
+
+        const {storeName, email , address , contactNumber} = parsedPayload.data;
+
+        if(!storeName && !email && !address && !contactNumber){
+            res.status(400).json({msg:"please provide atleast something to update..."});
+            return; 
+        }
+
+        const seller = await prisma.seller.findUnique({
+            where : {
+                id : req?.seller?.sellerId
+            },
+            include : {
+                products : true
+            }
+        })
+
+        console.log("seller",seller);
+
+        if(!seller){
+            res.status(500).json({msg:"seller does not exist..."});
+            return;
+        }
+
+        const newSeller = await prisma.seller.update({
+            where : {
+                id : seller?.id
+            },
+            data : {
+                storeName : storeName ?? seller.storeName,
+                email : email ?? seller.email,
+                address : address ?? seller.address,
+                contactNumber : contactNumber ?? seller.contactNumber
+            }
+        })
+
+        res.status(200).json({msg:"update successfull",newSeller});
+        return;
+    }catch(err){
+        res.status(500).json({msg:"internal server error",err});
+        return;
+    }
+}
+
+export const sellerForgotPassword = async(req:Request,res:Response):Promise<void> => {
+    try{
+        
+    }catch(err){
+        res.status(500).json({msg:"internal server error...",err});
+        return;
+    }
+}
+
+

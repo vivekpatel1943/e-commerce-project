@@ -1,8 +1,8 @@
 import express from 'express';
 import {prisma} from './utils/prisma';
-import sellerAuthRouter from './routes/seller.auth.routes'; 
-import postProductRouter from './routes/post.product.routes';
-import sellerProfileRouter from './routes/seller.profile.route';
+import sellerRouter from './routes/seller.routes'; 
+import productRouter from './routes/product.routes';
+
 import cookieParser from 'cookie-parser';
 
 const app = express();
@@ -11,9 +11,9 @@ const app = express();
 // this middleware makes json available as javascript object
 app.use(express.json());
 app.use(cookieParser());
-app.use('/api/v1',sellerAuthRouter);
-app.use('/api/v1',postProductRouter);
-app.use('/api/v1',sellerProfileRouter);
+app.use('/api/v1',sellerRouter);
+app.use('/api/v1',productRouter);
+
 
 const port = 3000;
 

@@ -46,7 +46,7 @@ const sellerAuthMiddleware = async (req:Request,res:Response,next:NextFunction):
             throw new Error("jwt_secret not found in the environment variables...")
         }
 
-        const isVerified = await verifyJwt(token,process.env.jwt_secret);
+        const isVerified = await verifyJwt(token,process.env.jwt_secret as string);
 
         if(!isVerified){
             return res.status(400).json("invalid token...")

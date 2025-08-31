@@ -20,8 +20,6 @@ export const sellerSigninSchema = zod.object({
     password : zod.string()
 })
 
-
-
 export const createProductSchema = zod.object({
     name : zod.string().min(2,"Product must be atleast 2 characters long."),
     description : zod.string().min(10,"description must be atleast 10 characters long.."),
@@ -30,7 +28,13 @@ export const createProductSchema = zod.object({
     stock : zod.number().nonnegative("stock cannot be negative.."),
 })
 
-
 export const sellerProfileSchema = zod.object({
     gstNumber : zod.string()
 })
+
+export const sellerProfileUpdateSchema = zod.object({
+    storeName : zod.string().min(2,"store name must be atleast 2 characters long.").optional(),
+    email : zod.string().email("Invalid email format.").optional(),
+    address : zod.string().min(5,"address must be atleast 5 characters long.").optional(),
+    contactNumber : zod.string().regex(/^[6-9]\d{9}$/,"Invalid Indian phone number.").optional(),
+}).optional();

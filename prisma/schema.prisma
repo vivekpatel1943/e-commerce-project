@@ -14,7 +14,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model Seller{
   id Int @id @default(autoincrement())
   storeName String @unique
@@ -39,7 +38,21 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt 
 
-  sellerId Int //Foreign key to seller , the Seller's Id
-  // specifies that userId refers to the id field in the Seller model
+  productImages ProductImage[]
+
+  sellerId Int //Foreign key (primary key in the parent table)
+  // specifies that sellerId refers to the id field in the Seller model
   seller Seller @relation(fields: [sellerId],references: [id]) //Relation field to Seller
+}
+
+// this will be a one to many relationship between the product and the images a product model can be related to many ProductImage models,
+
+model ProductImage {
+  id Int @id @default(autoincrement())
+  imageUrl String
+
+  // productId
+  productId Int //foreign key (primary key in the parent Table)
+  // specifies that productId refers to the id field in the  Product model , 
+  product Product @relation(fields:[productId],references:[id]) //Relation field to Product
 }
