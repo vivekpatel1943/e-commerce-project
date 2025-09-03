@@ -15,15 +15,15 @@ app.use(cookieParser())
 declare global{
     namespace Express {
         interface Request {
-            seller? :JwtPayload
+            buyer? :JwtPayload;
         }
     }
 }
 
 // so when the user signs up we send them a token , and he sends that token along with the requests , here we will write the code to verify that token , 
-const sellerAuthMiddleware = async (req:Request,res:Response,next:NextFunction):Promise<any> => {
+const buyerAuthMiddleware = async (req:Request,res:Response,next:NextFunction):Promise<any> => {
     // those tokens are stored in the cookies so we gotta extract it from there
-    const token = req.cookies.token; 
+    const token = req.cookies.buyerToken; 
 
     console.log("token",token);
 
@@ -52,7 +52,7 @@ const sellerAuthMiddleware = async (req:Request,res:Response,next:NextFunction):
             return res.status(400).json("invalid token...")
         }
 
-        req.seller = isVerified;
+        req.buyer = isVerified;
 
         next();
 
@@ -61,4 +61,4 @@ const sellerAuthMiddleware = async (req:Request,res:Response,next:NextFunction):
     }
 }
 
-export default sellerAuthMiddleware;
+export default buyerAuthMiddleware;

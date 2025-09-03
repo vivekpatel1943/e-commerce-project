@@ -4,6 +4,8 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+
+
 generator client {
   provider = "prisma-client-js"
   // output   = "../src/generated/prisma"
@@ -40,9 +42,11 @@ model Product {
 
   productImages ProductImage[]
 
-  sellerId Int //Foreign key (primary key in the parent table)
+  sellerId Int//Foreign key (primary key in the parent table)
   // specifies that sellerId refers to the id field in the Seller model
   seller Seller @relation(fields: [sellerId],references: [id]) //Relation field to Seller
+
+  cartItems CartItem[] 
 }
 
 // this will be a one to many relationship between the product and the images a product model can be related to many ProductImage models,
@@ -56,3 +60,58 @@ model ProductImage {
   // specifies that productId refers to the id field in the  Product model , 
   product Product @relation(fields:[productId],references:[id]) //Relation field to Product
 }
+
+model Buyer {
+  id Int @id @default(autoincrement())
+  username String @unique
+  email String @unique
+  password String
+  isVerified Boolean @default(false)
+  cart Cart?
+
+  // a one-to-many relationship with the Address model
+  addresses Address[]
+}
+
+
+model Cart{
+  id String @id @default(uuid())
+
+  cartCount Int @default(0)
+
+  buyerId Int @unique
+  buyer Buyer @relation(fields: [buyerId],references:[id])
+
+  cartItems CartItem[]
+}
+
+model CartItem {
+  id String @id @default(uuid())
+
+  quantity Int @default(1)
+
+  cartId String //relate to the Cart model with it's id,
+  // specifies that cartId refers to the id of the Cart model
+  cart Cart @relation(fields:[cartId],references: [id])
+
+  productId Int // foreign key (refers to the primary key of the parent model)
+  // specifies that productId refers to the id of the Product model
+  product Product @relation(fields: [productId],references: [id])
+}
+
+model Address {
+  id String @id @default(uuid())
+
+  building String
+  street String 
+  city String
+  state String
+  pin String
+  country String 
+
+  isDefault Boolean @default(false)
+  
+  buyerId Int //foreign key as the id of the table we want this table to connect 
+  buyer Buyer @relation(fields:[buyerId],references: [id])
+}
+

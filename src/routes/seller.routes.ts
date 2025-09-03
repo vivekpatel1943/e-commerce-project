@@ -2,7 +2,7 @@ import express from 'express';
 import {prisma} from '../utils/prisma';
 import cookieParser from 'cookie-parser';
 import sellerAuthMiddleware from '../Middlewares/seller.auth.middleware';
-import { sellerSignupHandler , sellerSigninHandler,sellerProfileHandler, sellerProfileUpdate} from '../controllers/seller.controller';
+import { sellerSignupHandler , sellerSigninHandler,sellerProfileHandler, sellerProfileUpdate, sellerForgotPassword, sellerVerifyOTP} from '../controllers/seller.controller';
 
 const sellerRouter = express.Router();
 
@@ -14,5 +14,7 @@ sellerRouter.post('/auth/seller/signup',sellerSignupHandler);
 sellerRouter.post('/auth/seller/signin',sellerSigninHandler);
 sellerRouter.get('/seller/profile',sellerAuthMiddleware,sellerProfileHandler);
 sellerRouter.post('/seller/update',sellerAuthMiddleware,sellerProfileUpdate)
+sellerRouter.post('/seller/forgotPassword',sellerAuthMiddleware,sellerForgotPassword);
+sellerRouter.post('/seller/verifyOtp',sellerAuthMiddleware,sellerVerifyOTP)
 
 export default sellerRouter;

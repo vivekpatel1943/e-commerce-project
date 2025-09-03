@@ -4,8 +4,10 @@ import {Request,Response} from 'express';
 import {prisma} from '../utils/prisma';
 import bcrypt from 'bcryptjs';
 import jwt ,{ SignOptions } from 'jsonwebtoken';
+import {redisClient} from '../utils/redisClient';
+import { sendEmail } from '../utils/emailClient';
 
-import {sellerSignupSchema,sellerSigninSchema,sellerProfileSchema,sellerProfileUpdateSchema} from '../types/types';
+import {sellerSignupSchema,sellerSigninSchema,sellerProfileSchema,sellerProfileUpdateSchema,sellerForgotPasswordSchema, sellerForgotPasswordOTPSchema} from '../types/types';
 
 // configuring environment variables
 dotenv.config();
@@ -228,11 +230,87 @@ export const sellerProfileUpdate = async (req:Request,res:Response):Promise<void
 
 export const sellerForgotPassword = async(req:Request,res:Response):Promise<void> => {
     try{
+        const parsedPayload = sellerForgotPasswordSchema.safeParse(req.body);
         
+        if(!parsedPayload.success){
+            res.status(400).json({error:parsedPayload.error});
+            return;
+        }
+
+        const {email , gstNumber} = parsedPayload.data;
+
+        const seller = await prisma.seller.findFirst({
+            where : {
+                id : req.seller?.sellerId,
+                email : email,
+                gstNumber : gstNumber
+            }
+        })
+
+        if(!seller){
+            res.status(400).json({msg:"seller with the provided email does not exist.."});
+            return;
+        }
+
+        // if you add any number less than 900,000 to 100,000 it would always be a six digit number,
+        const otp = Math.floor(Math.random()*900000) + 100000;
+        await redisClient.set('otp',otp,{EX:300}) // 5 mins or 300 seconds TTL(time-to-live) for the otp, then the redis will automatically delete it from the given redis instance , 
+        sendEmail(
+            `${email}`,
+            "regarding your request to change the password your account in e_commerce_platform",
+            `
+                <div>
+                    <h1>e_commerce_platform</h1>
+                    <p>your otp is ${otp}</p>
+                    <p><b>we have received a request to change the password of your account in e_commerce_project ,if you have not made this request, please report to @ecommerceplatformsecurityforum</b></p>
+                </div>`
+        )
+
+        res.status(200).json({msg:"message sent to the user's gmail successfully..."});
+        return;
     }catch(err){
         res.status(500).json({msg:"internal server error...",err});
         return;
     }
 }
 
+
+export const sellerVerifyOTP = async(req:Request,res:Response):Promise<void> => {
+    try{
+        const parsedPayload = sellerForgotPasswordOTPSchema.safeParse(req.body);
+
+        if(!parsedPayload.success){
+            res.status(400).json({error:parsedPayload.error});
+            return;
+        }
+
+        const {otp} = parsedPayload.data;
+        
+        const storedOtp = await redisClient.get('otp');
+
+        if(!storedOtp){
+            res.status(500).json({msg:`internal error..`})
+            return;
+        }
+
+        if(otp !== storedOtp){
+            const timeleft = await redisClient.ttl('otp');
+            console.log("timeLeft",timeleft); 
+            res.status(400).json({msg:`otp doesn't match , you can generate another one ${timeleft} seconds`});
+            return;
+        }
+
+        res.status(200).json({msg:"otp verified successfully..."});
+
+        // delete the otp after use
+        await redisClient.del('otp');
+
+        return; 
+
+    }catch(err){
+        console.error(err);
+        res.status(500).json({msg:"internal server error..."});
+        return;
+    }
+} 
 

@@ -2,8 +2,10 @@ import express from 'express';
 import {prisma} from './utils/prisma';
 import sellerRouter from './routes/seller.routes'; 
 import productRouter from './routes/product.routes';
+import buyerRouter from './routes/buyer.routes';
 
 import cookieParser from 'cookie-parser';
+import { redisClient } from './utils/redisClient';
 
 const app = express();
 
@@ -13,6 +15,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use('/api/v1',sellerRouter);
 app.use('/api/v1',productRouter);
+app.use('/api/v1',buyerRouter)
 
 
 const port = 3000;
@@ -27,6 +30,17 @@ const databaseConnect = async () => {
 }
 
 databaseConnect();
+
+const redisConnect = async () => {
+    try{
+        await redisClient.connect();
+        console.log("redis connection succesfull...")
+    }catch(err){
+        console.log("redis client error",err);
+    }
+} 
+
+redisConnect();
 
 app.listen(port , () => {
     console.log("your server is running on port ", port , " .")

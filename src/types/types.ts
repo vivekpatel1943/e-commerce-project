@@ -38,3 +38,57 @@ export const sellerProfileUpdateSchema = zod.object({
     address : zod.string().min(5,"address must be atleast 5 characters long.").optional(),
     contactNumber : zod.string().regex(/^[6-9]\d{9}$/,"Invalid Indian phone number.").optional(),
 }).optional();
+
+
+export const sellerForgotPasswordSchema = zod.object({
+    email : zod.string().nonempty(),
+    gstNumber : zod.string().nonempty() 
+}) 
+
+export const sellerForgotPasswordOTPSchema = zod.object({
+    otp : zod.string()
+})
+
+export const buyerSignupSchema = zod.object({
+    username : zod.string().min(2,"store name must be atleast 2 characters long."),
+    email : zod.string().email("Invalid email format."),
+    password : zod.string()
+        .min(8, "password must be atleast 8 characters long.")
+        .regex(/[A-Z]/,"Password  must contain atleast one uppercase letter.")
+        .regex(/[a-z]/,"password must contain atleast one lowercase letter")
+        .regex(/[0-9]/,"password must contain atleast one digit")
+        .regex(/[\W\s]/,"Password must contain atleast one special character.") 
+})
+ 
+
+export const buyerVerifyEmailSchema = zod.object({
+    email : zod.string().email("Invalid email format..")
+})
+
+export const verifyEmailVerificationOTPSchema = zod.object({
+    emailVerificationOTP : zod.string(),
+    email : zod.string().email("Invalid email format...")
+})
+
+
+export const buyerSigninSchema = zod.object({
+    email : zod.string().email("Invalid email format..."),
+    password : zod.string()
+})
+
+
+export const addToCartSchema = zod.object({
+    productId : zod.number().positive("productId must be greater than 0"),
+    quantity : zod.number().positive("quantity must be greater than 0"),
+})
+
+export const addressSchema = zod.object({
+    building : zod.string(),
+    street : zod.string(),
+    city : zod.string(),
+    state : zod.string(),
+    pin : zod.string(),
+    country : zod.string(),
+
+    isDefault : zod.boolean()
+})
