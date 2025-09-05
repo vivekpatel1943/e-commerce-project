@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import { prisma } from '../utils/prisma';
-import { buyerSignupSchema, buyerVerifyEmailSchema, verifyEmailVerificationOTPSchema, buyerSigninSchema, addToCartSchema, addressSchema } from '../types/types';
+import { buyerSignupSchema, buyerVerifyEmailSchema, verifyEmailVerificationOTPSchema, buyerSigninSchema, addToCartSchema, addressSchema, orderSchema } from '../types/types';
 import { redisClient } from '../utils/redisClient';
 import bcrypt from 'bcryptjs';
 import { sendEmail } from '../utils/emailClient'
@@ -325,14 +325,14 @@ export const addAddress = async (req: Request, res: Response): Promise<void> => 
                 pin: pin,
                 country: country,
                 isDefault: isDefault,
-                buyer : {
-                    connect : {id : req.buyer?.buyerId}
+                buyer: {
+                    connect: { id: req.buyer?.buyerId }
                 }
             }
         })
 
-        res.status(201).json({msg:"your address has been successfully saved...",address});
-        return; 
+        res.status(201).json({ msg: "your address has been successfully saved...", address });
+        return;
 
     } catch (err) {
         console.log(err);
@@ -342,12 +342,143 @@ export const addAddress = async (req: Request, res: Response): Promise<void> => 
 }
 
 
-export const order = async (req:Request, res:Response):Promise<void> => {
+export const order = async (req: Request, res: Response): Promise<void> => {
+    try {
+
+        console.log("req.body", req.body)
+
+        const parsedPayload = orderSchema.safeParse(req.body);
+
+        if (!parsedPayload.success) {
+            res.status(400).json({ error: parsedPayload.error });
+            return;
+        }
+
+        console.log("parsedPayload", parsedPayload.data)
+
+        const { isFromCart, contactNumber, deliveryInstructions, paymentOption, isPaid, isDelivered, isReturned, addressId } = parsedPayload.data;
+
+        let cartId;
+        let productId;
+        let quantity;
+
+        if (parsedPayload.data.isFromCart) {
+            cartId = parsedPayload.data.cartId;
+        } else {
+            productId = parsedPayload.data.productId;
+            quantity = parsedPayload.data.quantity;
+        }
+
+
+
+
+        let orderItemsData = [];
+
+        const buyer = await prisma.buyer.findUnique({
+            where: {
+                id: req.buyer?.buyerId
+            }
+        })
+
+        if (!buyer) {
+            res.status(404).json({ msg: "buyer not found..." });
+            return;
+        }
+
+        if (isFromCart) {
+            // ----------cart-checkout-flow-------------
+
+            if (!cartId) {
+                res.status(404).json({ msg: "cartId not available.." });
+                return;
+            }
+            const cartItems = await prisma.cartItem.findMany({
+                where: { cartId: cartId },
+                include: {
+                    product: true
+                }
+            })
+
+            orderItemsData = cartItems.map((item) => ({
+                quantity: item.quantity ?? 1,
+                price: item.product.price,
+                product: { connect: { id: item.productId } }
+            }))
+        } else {
+
+            if (!productId) {
+                res.status(404).json({ msg: "productId not available..." });
+                return;
+            }
+
+            const product = await prisma.product.findUnique({
+                where: {
+                    id: productId
+                }
+            })
+
+            if (!product) {
+                res.status(404).json({ msg: "product not found..." });
+                return;
+            }
+
+            orderItemsData = [
+                {
+                    quantity: quantity ?? 1,
+                    product: { connect: { id: product.id } },
+                    price: product.price
+                }
+            ]
+
+        }
+
+        console.log("order items Data", orderItemsData)
+        let total = 0;
+        orderItemsData.map((item) => {
+            total += item.quantity * item.price;
+        })
+
+        console.log("total", total)
+
+        const order = await prisma.order.create({
+            data: {
+                total: total,
+                contactNumber,
+                deliveryInstructions: {
+                    "call when you reach": true,
+                    "leave at the door": false,
+                    "please do not call": false,
+                    "do not ring the door bell": false
+                },
+                paymentOption: {
+                    pay_now: false,
+                    pay_on_delivery: true
+                },
+                isPaid: false,
+                isDelivered: false,
+                isReturned: false,
+
+                buyerId: buyer?.id,
+                addressId: addressId,
+                orderItems: { create: orderItemsData }
+            },
+            include: { orderItems: true }
+        })
+
+        res.status(200).json({ msg: "order information created..." });
+        return;
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ msg: "internal server error...", err });
+        return;
+    }
+}
+
+export const pay = async(req:Request,res:Response):Promise<void> => {
     try{
         
     }catch(err){
-        console.error(err);
-        res.status(500).json({msg:"internal server error...",err});
+        res.status(500).json({msg:"internal server error.."});
         return;
     }
 }

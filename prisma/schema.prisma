@@ -46,7 +46,11 @@ model Product {
   // specifies that sellerId refers to the id field in the Seller model
   seller Seller @relation(fields: [sellerId],references: [id]) //Relation field to Seller
 
+  //a one-to-many relationship with the CartItem table
   cartItems CartItem[] 
+
+  // a one-to-many relationship with the Order model
+  orderItems OrderItem[]
 }
 
 // this will be a one to many relationship between the product and the images a product model can be related to many ProductImage models,
@@ -71,6 +75,9 @@ model Buyer {
 
   // a one-to-many relationship with the Address model
   addresses Address[]
+
+  // a one-to-many relationship with the Order table
+  orders Order[]
 }
 
 
@@ -113,5 +120,41 @@ model Address {
   
   buyerId Int //foreign key as the id of the table we want this table to connect 
   buyer Buyer @relation(fields:[buyerId],references: [id])
+
+  orders Order[]
 }
 
+model Order {
+  id String @id @default(uuid())
+  total Int @default(0)
+  contactNumber String 
+  deliveryInstructions Json
+  paymentOption Json 
+
+  isPaid Boolean @default(false)
+  isDelivered Boolean @default(false)
+  isReturned Boolean @default(false)
+
+  buyerId Int //foreign key (the primary key of the Buyer table)
+
+  // this specifies that buyerId refers to the id of the Buyer table
+  buyer Buyer @relation(fields: [buyerId],references: [id])
+  // a one-to-one relationship with the Address model
+  addressId String // foreign key refering to the primary key of a record in an Address table
+
+  address Address @relation(fields: [addressId],references: [id]) //this specifies that addressId refers to the id of the Address table  
+  orderItems OrderItem[]
+}
+
+model OrderItem {
+  id String @id @default(uuid())
+
+  quantity Int @default(1)
+  price Int //snapshot of the product at the time of the order
+
+  orderId String //one-to-Many relationshp with the Order table
+  order Order @relation(fields: [orderId], references: [id])  
+
+  productId Int
+  product Product @relation(fields: [productId] , references: [id])
+}

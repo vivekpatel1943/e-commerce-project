@@ -1,13 +1,15 @@
-import 'express';
+// import 'express';  //That import makes this file a module, which can sometimes stop global augmentation from applying.
+
+///<reference types = "express" />
 import {Jwt, JwtPayload} from 'jsonwebtoken';
 
 interface BuyerJwtPayload extends JwtPayload {
-    buyerId : Number,
+    buyerId : number,
     email : string
 }
 
 interface SellerJwtPayload extends JwtPayload { 
-    sellerId : Number,
+    sellerId : number,
     email : string,
     gstNumber : string
 }

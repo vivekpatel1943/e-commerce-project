@@ -90,5 +90,35 @@ export const addressSchema = zod.object({
     pin : zod.string(),
     country : zod.string(),
 
+    // is the address being set as the default address by the user 
     isDefault : zod.boolean()
 })
+
+const baseOrderFields = zod.object({
+    contactNumber : zod.string(),
+    deliveryInstructions : zod.object({"call when you reach":zod.boolean().default(false),"leave at the door":zod.boolean().default(false),"please do not call":zod.boolean().default(false),  "do not ring the door bell" :zod.boolean().default(false)}).optional(),
+    paymentOption : zod.object({pay_now  : zod.boolean().default(false),pay_on_delivery:zod.boolean().default(false)}),
+    isPaid : zod.boolean().default(false),
+    isDelivered : zod.boolean().default(false),
+    isReturned : zod.boolean().default(false),    
+    addressId : zod.string()
+})
+
+// checkout from cart
+const cartCheckoutSchema = baseOrderFields.extend({
+    isFromCart : zod.literal(true),
+    cartId : zod.string()
+})
+
+
+// direct Buy 
+const directBuySchema = baseOrderFields.extend({
+    isFromCart : zod.literal(false).default(false),
+    productId : zod.number(),
+    quantity : zod.number().default(1)
+})
+
+export const orderSchema = zod.discriminatedUnion("isFromCart",[
+    cartCheckoutSchema,
+    directBuySchema
+])
