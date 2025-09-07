@@ -122,3 +122,7 @@ export const orderSchema = zod.discriminatedUnion("isFromCart",[
     cartCheckoutSchema,
     directBuySchema
 ])
+
+export const paymentSchema = zod.object({
+    orderId : zod.string().nonempty("orderId cannot be empty..")
+})

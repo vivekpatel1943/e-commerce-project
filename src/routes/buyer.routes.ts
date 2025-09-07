@@ -1,5 +1,5 @@
 import express from 'express';
-import {buyerSignup, buyerVerifyEmailVerificationOTP, sendOTPForEmailVerification,buyerSignin,addToCart, addAddress, order} from '../controllers/buyer.controller';
+import {buyerSignup, buyerVerifyEmailVerificationOTP, sendOTPForEmailVerification,buyerSignin,addToCart, addAddress, order, paymentHandler} from '../controllers/buyer.controller';
 import buyerAuthMiddleware from '../Middlewares/buyer.auth.middleware';
 
 const buyerRouter = express.Router();
@@ -11,5 +11,6 @@ buyerRouter.post('/buyer/signin',buyerSignin)
 buyerRouter.post('/buyer/addToCart',buyerAuthMiddleware,addToCart);
 buyerRouter.post('/buyer/addAddress',buyerAuthMiddleware,addAddress);
 buyerRouter.post('/buyer/order',buyerAuthMiddleware,order);
+buyerRouter.post('/buyer/pay',buyerAuthMiddleware,paymentHandler);
 
 export default buyerRouter;

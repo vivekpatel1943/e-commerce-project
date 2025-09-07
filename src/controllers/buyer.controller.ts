@@ -1,11 +1,12 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import { prisma } from '../utils/prisma';
-import { buyerSignupSchema, buyerVerifyEmailSchema, verifyEmailVerificationOTPSchema, buyerSigninSchema, addToCartSchema, addressSchema, orderSchema } from '../types/types';
+import { buyerSignupSchema, buyerVerifyEmailSchema, verifyEmailVerificationOTPSchema, buyerSigninSchema, addToCartSchema, addressSchema, orderSchema , paymentSchema} from '../types/types';
 import { redisClient } from '../utils/redisClient';
 import bcrypt from 'bcryptjs';
 import { sendEmail } from '../utils/emailClient'
 import jwt, { SignOptions } from 'jsonwebtoken';
+import Stripe from 'stripe';
 
 // initialiasing express
 const app = express();
@@ -15,6 +16,8 @@ dotenv.config();
 
 // middlewares
 app.use(express.json());
+
+
 
 export const buyerSignup = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -369,9 +372,6 @@ export const order = async (req: Request, res: Response): Promise<void> => {
             quantity = parsedPayload.data.quantity;
         }
 
-
-
-
         let orderItemsData = [];
 
         const buyer = await prisma.buyer.findUnique({
@@ -387,7 +387,6 @@ export const order = async (req: Request, res: Response): Promise<void> => {
 
         if (isFromCart) {
             // ----------cart-checkout-flow-------------
-
             if (!cartId) {
                 res.status(404).json({ msg: "cartId not available.." });
                 return;
@@ -429,7 +428,6 @@ export const order = async (req: Request, res: Response): Promise<void> => {
                     price: product.price
                 }
             ]
-
         }
 
         console.log("order items Data", orderItemsData)
@@ -457,7 +455,6 @@ export const order = async (req: Request, res: Response): Promise<void> => {
                 isPaid: false,
                 isDelivered: false,
                 isReturned: false,
-
                 buyerId: buyer?.id,
                 addressId: addressId,
                 orderItems: { create: orderItemsData }
@@ -465,8 +462,13 @@ export const order = async (req: Request, res: Response): Promise<void> => {
             include: { orderItems: true }
         })
 
-        res.status(200).json({ msg: "order information created..." });
-        return;
+        if(paymentOption.pay_now){
+            res.status(200).json({ msg: "order information created..." , order});
+            return;
+        }else{
+            res.status(200).json({msg:"order successfull...", order});
+            return;
+        }
     } catch (err) {
         console.error(err);
         res.status(500).json({ msg: "internal server error...", err });
@@ -474,9 +476,44 @@ export const order = async (req: Request, res: Response): Promise<void> => {
     }
 }
 
-export const pay = async(req:Request,res:Response):Promise<void> => {
+export const paymentHandler = async(req:Request,res:Response):Promise<void> => {
     try{
+        const parsedPayload = paymentSchema.safeParse(req.body);
         
+        if(!parsedPayload.success){
+            res.status(400).json({error:parsedPayload.error});
+            return;
+        }
+
+        const {orderId} = parsedPayload.data;
+
+        const order = await prisma.order.findUnique({
+            where : {id : orderId},
+        })
+
+        if(!order){
+            res.status(500).json({msg:"order not available..."});
+            return;
+        }
+        console.log("order",order);
+
+        if(!process.env.STRIPE_SECRET_KEY){
+            res.status(404).json({msg:"stripe secret key not available.."})
+            return;
+        }
+
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount : order?.total*100, //in cents , so 5000 : rs 50.00
+            currency : "inr",
+            automatic_payment_methods : {enabled : true}
+        })
+
+        console.log("paymentIntents", paymentIntent);
+
+        res.status(200).json({clientSecret:paymentIntent.client_secret});
+        return;
     }catch(err){
         res.status(500).json({msg:"internal server error.."});
         return;
