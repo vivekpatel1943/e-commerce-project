@@ -14,14 +14,6 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-// with this we can send tokens in the cookies from a specific frontend 
-app.use(cors({
-    origin : "http://localhost:5173/",
-    credentials : true //this allows cookies to be sent 
-}))
-
-// this makes form data available in the request body
-app.use(express.urlencoded({extended:true}));
 
 app.use('/api/v1',sellerRouter);
 app.use('/api/v1',productRouter);
