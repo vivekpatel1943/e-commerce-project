@@ -80,7 +80,6 @@ model Buyer {
   orders Order[]
 }
 
-
 model Cart{
   id String @id @default(uuid())
 
@@ -92,6 +91,10 @@ model Cart{
   cartItems CartItem[]
 }
 
+// we need this CartItem model cause a sql database does not support many to many relationships , which a direct relationship between the Cart model and the Product model would have been , as a Cart can have many products and a Product can also be the part of many Carts , so that's why we need to use this CartItem table , the relationship between a product table and a CartItem table will be one to many and the relationship between the cart table and the CartItem table will be one to many as well , so with the help of the cartItem table a product can be part of many carts and a cart can have many products,
+
+// a CartItem relates to only one product and only one cart at once , 
+// if you want a product in your cart you take a cartItem which has this product 
 model CartItem {
   id String @id @default(uuid())
 

@@ -76,13 +76,14 @@ export const sendOTPForEmailVerification = async (req: Request, res: Response): 
 
         if (!buyer) {
             res.status(404).json({ msg: "buyer with the provided email does not exist..." });
-            return;
+            return; 
         }
 
         const emailVerificationOTP = Math.floor(Math.random() * 900000) + 100000;
 
         // setting up the otp in a redis instance;
-        redisClient.set(`emailVerificationOTP:${email}`, emailVerificationOTP, { EX: 300 }); //5 mins or 300 seconds will be the ttl or time-to-live of the otp ,  then it will get deleted all by itself or automatically ,
+        // the email is being used as a key so that the key for each user is unique so that the same OTPs do not get sent to more than one user when multiple verification requests are being made at the same time 
+        redisClient.set(`emailVerificationOTP:${email}`, emailVerificationOTP, { EX: 300 }); //5 mins or 300 seconds will be the ttl or time-to-live of the otp ,  then it will get deleted all by itself 
 
         sendEmail(
             email,
@@ -123,7 +124,7 @@ export const buyerVerifyEmailVerificationOTP = async (req: Request, res: Respons
         }
 
         if (emailVerificationOTP !== storedOtp) {
-            const timeleft = await redisClient.ttl('emailVerficationOTP');
+            const timeleft = await redisClient.ttl(`emailVerficationOTP:${email}`);
             console.log("timeLeft", timeleft);
             res.status(400).json({ msg: `otp doesn't match , you can generate another one ${timeleft} seconds` });
             return;
@@ -141,7 +142,7 @@ export const buyerVerifyEmailVerificationOTP = async (req: Request, res: Respons
         })
 
         // delete the otp after use
-        await redisClient.del('emailVerificationOTP');
+        await redisClient.del(`emailVerficationOTP:${email}`);
 
         return;
     } catch (err) {
@@ -203,10 +204,9 @@ export const buyerSignin = async (req: Request, res: Response): Promise<void> =>
         if (!process.env.jwt_secret) {
             res.status(500).json({ msg: "you can't sign the jwt token if there is no jwt secret available.." });
             return;
-        }
+        };
 
         const token = await signToken({ buyerId: buyer.id, email: buyer.email }, process.env.jwt_secret as string, { expiresIn: "1w" });
-
 
         res.cookie('buyerToken', token, {
             httpOnly: true, //prevents javascript access to cookies , helps avoid XSS(cross-site scripting)

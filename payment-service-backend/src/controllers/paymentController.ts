@@ -34,7 +34,7 @@ export const paymentHandler = async (req: Request, res: Response): Promise<void>
         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: payment.total * 100, //in cents , so 5000 : rs 50.00
+            amount: payment.total * 100, //in paise , so 5000 : rs 50.00
             currency: "inr",
             automatic_payment_methods: { enabled: true } //this is a parameter which controls how stripe automatically manages and displays eligible payment methods to your customers  
         })

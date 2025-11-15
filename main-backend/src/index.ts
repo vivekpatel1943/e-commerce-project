@@ -14,11 +14,19 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
+// here we are specifying the frontend which will be allowed to send requests to the backend
+// with credentials : true , the frontend shall be allowed to send authorization headers and cookies to the backend 
+app.use(cors({
+    origin : 'http://localhost:5173',
+    credentials : true 
+}))
+
+// this allows form data to be accessed in the request body 
+app.use(express.urlencoded({extended:true}));
 
 app.use('/api/v1',sellerRouter);
 app.use('/api/v1',productRouter);
 app.use('/api/v1',buyerRouter)
-
 
 const port = 3000;
 

@@ -20,7 +20,7 @@ declare global{
     }
 }
 
-// so when the user signs up we send them a token , and he sends that token along with the requests , here we will write the code to verify that token , 
+// so when the user signs in we send them a token , and he sends that token along with the requests , here we will write the code to verify that token , 
 const buyerAuthMiddleware = async (req:Request,res:Response,next:NextFunction):Promise<any> => {
     // those tokens are stored in the cookies so we gotta extract it from there
     const token = req.cookies.buyerToken; 
@@ -40,10 +40,6 @@ const buyerAuthMiddleware = async (req:Request,res:Response,next:NextFunction):P
                     resolve(data as JwtPayload);
                 })
             })
-        }
-
-        if(!process.env.jwt_secret){
-            throw new Error("jwt_secret not found in the environment variables...")
         }
 
         const isVerified = await verifyJwt(token,process.env.jwt_secret as string);
