@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import { prisma } from './utils/prisma';
 import { redisSubscriber } from './utils/redisSubscriber';
+import paymentRouter from './routes/payment.route';
 
 // configuring environment variables
 dotenv.config();
@@ -14,6 +15,8 @@ const app = express();
 // this middleware makes json data available as javascript object
 app.use(express.json())
 app.use(cookieParser());
+
+app.use(paymentRouter);
 
 const database_connection = async () => {
     try {
@@ -52,7 +55,7 @@ redisSubscriber.subscribe("order.created", async (message) => {
             data: {
                 orderId: orderData.orderId,
                 buyerId: orderData.buyerId,
-                total: orderData.total,
+                total: orderData.totalAmount,
             }
         })
     } catch (err) {

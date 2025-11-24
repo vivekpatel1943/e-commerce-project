@@ -33,6 +33,7 @@ export const paymentHandler = async (req: Request, res: Response): Promise<void>
 
         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+        // this paymentIntent is received in the frontend and gives the user access to the stripe paymentUI and when payment is successfull sends a webhook to the backend reporting that the payment has been successfull ,
         const paymentIntent = await stripe.paymentIntents.create({
             amount: payment.total * 100, //in paise , so 5000 : rs 50.00
             currency: "inr",
